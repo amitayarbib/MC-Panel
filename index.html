@@ -1,6 +1,187 @@
-<!doctype html>
+
+<!DOCTYPE html>
+<html>
 <head>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4782553267472240"
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4782553267472240"
      crossorigin="anonymous"></script>
   <meta name="google-adsense-account" content="ca-pub-4782553267472240">
+    <title>Minecraft Server Control Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        #start-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+        #stop-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        #restart-btn {
+            background-color: #f39c12;
+            color: white;
+        }
+        #cmd-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .command-area {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        #command {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .console {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            height: 400px;
+            overflow-y: scroll;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .server-status {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .online {
+            color: #27ae60;
+        }
+        .offline {
+            color: #e74c3c;
+        }
+    </style>
 </head>
+<body>
+    <h1>Minecraft Server Control Panel</h1>
+    
+    <div class="server-status">
+        Status: <span id="status" class="offline">OFFLINE</span>
+    </div>
+    
+    <div class="controls">
+        <button id="start-btn" onclick="startServer()">Start Server</button>
+        <button id="stop-btn" onclick="stopServer()" disabled>Stop Server</button>
+        <button id="restart-btn" onclick="restartServer()" disabled>Restart Server</button>
+    </div>
+    
+    <div class="command-area">
+        <input type="text" id="command" placeholder="Enter server command...">
+        <button id="cmd-btn" onclick="sendCommand()" disabled>Send</button>
+    </div>
+    
+    <div class="console" id="console"></div>
+    
+    <script>
+        // Update console output regularly
+        function updateConsole() {
+            fetch('/console')
+                .then(response => response.json())
+                .then(data => {
+                    const consoleElem = document.getElementById('console');
+                    consoleElem.innerHTML = data.output.join('\n');
+                    consoleElem.scrollTop = consoleElem.scrollHeight;
+                    
+                    // Update status and buttons
+                    const statusElem = document.getElementById('status');
+                    const startBtn = document.getElementById('start-btn');
+                    const stopBtn = document.getElementById('stop-btn');
+                    const restartBtn = document.getElementById('restart-btn');
+                    const cmdBtn = document.getElementById('cmd-btn');
+                    const cmdInput = document.getElementById('command');
+                    
+                    if (data.running) {
+                        statusElem.textContent = 'ONLINE';
+                        statusElem.className = 'online';
+                        startBtn.disabled = true;
+                        stopBtn.disabled = false;
+                        restartBtn.disabled = false;
+                        cmdBtn.disabled = false;
+                        cmdInput.disabled = false;
+                    } else {
+                        statusElem.textContent = 'OFFLINE';
+                        statusElem.className = 'offline';
+                        startBtn.disabled = false;
+                        stopBtn.disabled = true;
+                        restartBtn.disabled = true;
+                        cmdBtn.disabled = true;
+                        cmdInput.disabled = true;
+                    }
+                });
+        }
+        
+        // Control server functions
+        function startServer() {
+            fetch('/start', { method: 'POST' });
+        }
+        
+        function stopServer() {
+            fetch('/stop', { method: 'POST' });
+        }
+        
+        function restartServer() {
+            fetch('/restart', { method: 'POST' });
+        }
+        
+        function sendCommand() {
+            const command = document.getElementById('command').value;
+            fetch('/command', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ command: command }),
+            });
+            document.getElementById('command').value = '';
+        }
+        
+        // Add Enter key support for command input
+        document.getElementById('command').addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                sendCommand();
+            }
+        });
+        
+        // Update console every second
+        setInterval(updateConsole, 1000);
+        updateConsole(); // Initial update
+    </script>
+</body>
+</html>
